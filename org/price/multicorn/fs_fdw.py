@@ -10,10 +10,10 @@ from os.path import join
 from os.path import getsize
 
 
-class Fs(ForeignDataWrapper):
+class FsFdw(ForeignDataWrapper):
     def __init__(self, options, columns):
-        super(Fs, self).__init__(options, columns)
-        self.debug = (bool)(options.get('debug')) or False
+        super(FsFdw, self).__init__(options, columns)
+        self.debug = options.get('debug') == 'True'
         if self.debug:
             log_to_postgres('Init {}{}'.format(options, columns), INFO)
 

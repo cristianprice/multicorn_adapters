@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='python_tests',
+    name='multicorn_adapters',
     version='',
     packages=['org', 'org.price', 'org.price.multicorn'],
     url='',
@@ -10,6 +10,6 @@ setup(
     author_email='',
     description='',
     install_requires=[
-        'multicorn'
+        'multicorn', 'kafka-python'
     ]
 )
