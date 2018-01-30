@@ -1,15 +1,13 @@
 from multicorn import ForeignDataWrapper
 from multicorn.utils import log_to_postgres
-from multicorn.utils import ERROR
 from multicorn.utils import INFO
+from org.price.multicorn.fs_utils import get_default_root
 
 from org.price.multicorn.fs_utils import walk
-from org.price.multicorn.fs_utils import get_root
 from org.price.multicorn.fs_utils import try_get_root
 from org.price.multicorn.fs_utils import raise_
 from os.path import join
 from os.path import getsize
-import os
 
 
 class Fs(ForeignDataWrapper):
@@ -25,7 +23,7 @@ class Fs(ForeignDataWrapper):
         return 1, 1000
 
     def execute(self, quals, columns, sortkeys=None):
-        root = '/tmp'
+        root = get_default_root()
 
         for qual in quals:
             if self.debug:

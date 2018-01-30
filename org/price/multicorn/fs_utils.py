@@ -1,6 +1,6 @@
 from os.path import join, isdir, islink
 from os import error, listdir
-import string
+from tempfile import gettempdir
 import platform
 from multicorn.utils import log_to_postgres
 from multicorn.utils import ERROR
@@ -32,25 +32,8 @@ def walk(top, topdown=True, onerror=None, deeplevel=0):
         yield top, dirs, nondirs, deeplevel
 
 
-def get_root():
-    system = platform.system()
-
-    if system.lower() == 'windows':
-        return get_drives()[0] + '\\'
-
-    return '/'
-
-
-def get_drives():
-    from ctypes import windll
-    drives = []
-    bitmask = windll.kernel32.GetLogicalDrives()
-    for letter in string.uppercase:
-        if bitmask & 1:
-            drives.append(letter)
-        bitmask >>= 1
-
-    return drives
+def get_default_root():
+    return gettempdir()
 
 
 def try_get_root(qual):
