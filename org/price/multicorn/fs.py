@@ -10,7 +10,6 @@ from org.price.multicorn.fs_utils import raise_
 from os.path import join
 from os.path import getsize
 import os
-import sys
 
 
 class Fs(ForeignDataWrapper):
@@ -18,22 +17,24 @@ class Fs(ForeignDataWrapper):
         super(Fs, self).__init__(options, columns)
         self.debug = (bool)(options.get('debug')) or False
         if self.debug:
-            log_to_postgres('Python Version: {}'.format(sys.version_info), INFO)
             log_to_postgres('Init {}{}'.format(options, columns), INFO)
 
+    def get_rel_size(self, quals, columns):
+        if self.debug:
+            log_to_postgres('Init {}{}'.format(quals, columns), INFO)
+        return 1, 1000
+
     def execute(self, quals, columns, sortkeys=None):
-        for n in range(10):
-            yield {'filename': str(n)}
+        root = '/tmp'
 
+        for qual in quals:
+            if self.debug:
+                log_to_postgres(qual, INFO)
+            root = try_get_root(qual) or root
 
-def nothing():
-    for root, dirs, files, deeplevel in list(walk('/li', onerror=raise_)):
-        try:
+        for location, dirs, files, deeplevel in list(walk(root, onerror=raise_)):
             for file in files:
-                yield {"depth": deeplevel, "filename": file, "filesize": getsize(join(root, file)), "location": root, "type": 'f'}
+                yield {"root": root, "depth": deeplevel, "filename": file, "filesize": getsize(join(location, file)), "location": location, "type": 'f'}
 
             for dir in dirs:
-                yield {"depth": deeplevel, "filename": dir, "filesize": getsize(join(root, file)), "location": root, "type": 'd'}
-
-        except Exception:
-            log_to_postgres(str(Exception), ERROR)
+                yield {"root": root, "depth": deeplevel, "filename": dir, "filesize": -1, "location": location, "type": 'd'}
