@@ -2,6 +2,7 @@ from multicorn import ForeignDataWrapper
 from multicorn.utils import log_to_postgres
 from multicorn.utils import INFO
 from kafka import KafkaConsumer
+from kafka import KafkaProducer
 import socket
 
 
@@ -23,15 +24,32 @@ class KafkaFdw(ForeignDataWrapper):
 
         if self.debug:
             log_to_postgres('Creating consumer ...', INFO)
-
         self.consumer = self.create_consumer()
+
+        if self.debug:
+            log_to_postgres('Creating producer ...', INFO)
+        self.producer = self.create_producer()
 
     def create_consumer(self):
         return KafkaConsumer(self.consumer_topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id,
                              enable_auto_commit=self.auto_commit)
 
+    def create_producer(self):
+        return KafkaProducer(bootstrap_servers=self.bootstrap_servers)
+
     def execute(self, quals, columns, sortkeys=None):
         pass
+
+    def rowid_column(self):
+        return "__rowid__"
+
+    def insert(self, values):
+        log_to_postgres(values, INFO)
+        return {}
+
+    def update(self, oldvalues, newvalues):
+        log_to_postgres(oldvalues, newvalues, INFO)
+        return {}
 
     def commit(self):
         pass
