@@ -16,6 +16,11 @@ class KafkaFdw(ForeignDataWrapper):
         self.auto_commit = options.get('auto_commit') == 'True'
         self.bootstrap_servers = options.get('bootstrap_servers') or 'localhost'
 
+        self.row_id = 'id'
+
+        if self.debug:
+            log_to_postgres('RowId: {}'.format(self.row_id), INFO)
+
         if not self.producer_topic or not self.consumer_topic:
             raise IOError('Please supply a consumer and producer topic name.')
 
@@ -41,15 +46,17 @@ class KafkaFdw(ForeignDataWrapper):
         pass
 
     def rowid_column(self):
-        return "__rowid__"
+        return self.row_id
 
     def insert(self, values):
         log_to_postgres(values, INFO)
-        return {}
+
+        return values
 
     def update(self, oldvalues, newvalues):
         log_to_postgres(oldvalues, newvalues, INFO)
-        return {}
+
+        return oldvalues
 
     def commit(self):
         pass
