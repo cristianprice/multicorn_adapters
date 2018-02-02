@@ -8,10 +8,6 @@ import logging
 
 from org.price.multicorn.kafka_utils import PgHandler
 
-logger = logging.getLogger('kafka')
-logger.addHandler(PgHandler())
-logger.setLevel(logging.DEBUG)
-
 
 class KafkaFdw(ForeignDataWrapper):
     def __init__(self, options, columns):
@@ -22,6 +18,10 @@ class KafkaFdw(ForeignDataWrapper):
         self.group_id = options.get('group_id') or socket.gethostname()
         self.auto_commit = options.get('auto_commit') == 'True'
         self.bootstrap_servers = options.get('bootstrap_servers') or 'localhost'
+
+        self.logger = logging.getLogger('kafka')
+        self.logger.addHandler(PgHandler())
+        self.logger.setLevel(logging.DEBUG)
 
         self.row_id = 'id'
 
