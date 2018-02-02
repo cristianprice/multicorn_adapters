@@ -4,6 +4,13 @@ from multicorn.utils import INFO
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 import socket
+import logging
+
+from org.price.multicorn.kafka_utils import PgHandler
+
+logger = logging.getLogger('kafka')
+logger.addHandler(PgHandler())
+logger.setLevel(logging.DEBUG)
 
 
 class KafkaFdw(ForeignDataWrapper):
@@ -36,29 +43,47 @@ class KafkaFdw(ForeignDataWrapper):
         self.producer = self.create_producer()
 
     def create_consumer(self):
-        return KafkaConsumer(self.consumer_topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id,
+        return KafkaConsumer(self.consumer_topic,
+                             key_deserializer=lambda x: x.decode('utf-8'),
+                             value_deserializer=lambda x: x.decode('utf-8'),
+                             bootstrap_servers=self.bootstrap_servers,
+                             group_id=self.group_id,
+                             consumer_timeout_ms=1000,
                              enable_auto_commit=self.auto_commit)
 
     def create_producer(self):
-        return KafkaProducer(bootstrap_servers=self.bootstrap_servers)
+        return KafkaProducer(bootstrap_servers=self.bootstrap_servers,
+                             key_serializer=lambda x: x.encode('utf-8'),
+                             value_serializer=lambda x: x.encode('utf-8'))
 
     def execute(self, quals, columns, sortkeys=None):
-        pass
+        count = 0
+        ret = {}
 
+        if self.debug:
+            log_to_postgres('Iterating: {}'.format(self.consumer), INFO)
+
+        for msg in self.consumer:
+            ret['msg'] = msg
+            count += 1
+            ret['id'] = str(count)
+            if self.debug:
+                log_to_postgres('Ret: {}'.format(ret), INFO)
+            yield ret
+
+    @property
     def rowid_column(self):
         return self.row_id
 
     def insert(self, values):
-        log_to_postgres(values, INFO)
+        if self.debug:
+            log_to_postgres(values, INFO)
 
+        self.producer.send(topic=self.producer_topic, value=values['msg'])
         return values
 
-    def update(self, oldvalues, newvalues):
-        log_to_postgres(oldvalues, newvalues, INFO)
-
-        return oldvalues
-
     def commit(self):
+        self.consumer.commit();
         pass
 
     def rollback(self):
