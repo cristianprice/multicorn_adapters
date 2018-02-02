@@ -47,6 +47,7 @@ class KafkaFdw(ForeignDataWrapper):
                              key_deserializer=lambda x: x.decode('utf-8'),
                              value_deserializer=lambda x: x.decode('utf-8'),
                              bootstrap_servers=self.bootstrap_servers,
+                             auto_offset_reset='latest',
                              group_id=self.group_id,
                              consumer_timeout_ms=1000,
                              enable_auto_commit=self.auto_commit)
@@ -64,7 +65,7 @@ class KafkaFdw(ForeignDataWrapper):
             log_to_postgres('Iterating: {}'.format(self.consumer), INFO)
 
         for msg in self.consumer:
-            ret['msg'] = msg
+            ret['msg'] = msg.value
             count += 1
             ret['id'] = str(count)
             if self.debug:
@@ -80,6 +81,7 @@ class KafkaFdw(ForeignDataWrapper):
             log_to_postgres(values, INFO)
 
         self.producer.send(topic=self.producer_topic, value=values['msg'])
+        self.producer.flush()
         return values
 
     def commit(self):
